@@ -5,7 +5,7 @@ def get_high_scores(conn, game_id):
     cursor = conn.cursor()
     sql_statement = 'SELECT scores.DatePlayed, scores.User, scores.Score FROM scores ' \
                     'INNER JOIN games ON scores.GameID = games.ID ' \
-                    'WHERE games.ID = ? ORDER BY Score DESC LIMIT 10'
+                    'WHERE games.ID = ? ORDER BY Score DESC LIMIT 5'
     scores = cursor.execute(sql_statement, (game_id,)).fetchall()
     return scores
 

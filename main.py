@@ -20,15 +20,23 @@ size = width, height = 800, 480
 BG_COLOR = (24, 41, 84)
 BUTTON_COLOR = (0, 175, 235)
 FONT_COLOR = (0, 0, 0)
+WHITE = (255, 255, 255)
 
 # fonts
 DEFAULT_FONT = pygame.font.SysFont('Courier New', 150)
 ALPHABET_FONT = pygame.font.SysFont('Courier New', 25)
+HIGH_SCORE_ENTRIES_FONT = pygame.font.SysFont('Courier New', 30, bold=True)
+HIGH_SCORE_TITLE_FONT_LEFT = pygame.font.SysFont('Courier New', 120, bold=True)
+HIGH_SCORE_TITLE_FONT_RIGHT = pygame.font.SysFont('Courier New', 100, bold=True)
+HOMESCREEN_HIGH_SCORES_FONT = pygame.font.SysFont('Courier New', 80)
 
 # homescreen objects
-HOMESCREEN_START_BUTTON = pygame.Rect(150, 140, 500, 200)
+HOMESCREEN_START_BUTTON = pygame.Rect(150, 65, 500, 200)
 HOMESCREEN_START_TEXT = DEFAULT_FONT.render('START', True, FONT_COLOR)
-HOMESCREEN_START_TEXT_LOCATION = (175, 150)
+HOMESCREEN_START_TEXT_LOCATION = (175, 75)
+HOMESCREEN_HIGH_SCORES_BUTTON = pygame.Rect(125, 300, 550, 100)
+HOMESCREEN_HIGH_SCORES_TEXT = HOMESCREEN_HIGH_SCORES_FONT.render('HIGH SCORES', True, FONT_COLOR)
+HOMESCREEN_HIGH_SCORES_LOCATION = (140, 310)
 
 # playing mode globals
 SCORE = 0
@@ -135,7 +143,28 @@ M_TEXT_LOCATION = (x_start + x_increment * 7 + text_x_offset, y_start + y_increm
 
 
 # high score screen shit
-
+HIGH_SCORE_BOX_SIZE = (300, 400)
+HIGH_SCORE_BOX = pygame.Rect(250, 40, *HIGH_SCORE_BOX_SIZE)
+# left side
+FIRST_PLACE_TEXT_LOCATION = (275, 85)
+HIGH_SCORE_TITLE_H1_LOCATION = (75, 20)
+HIGH_SCORE_TITLE_H_TEXT = HIGH_SCORE_TITLE_FONT_LEFT.render('H', True, WHITE)
+HIGH_SCORE_TITLE_I_LOCATION = (75, 120)
+HIGH_SCORE_TITLE_I_TEXT = HIGH_SCORE_TITLE_FONT_LEFT.render('I', True, WHITE)
+HIGH_SCORE_TITLE_G_LOCATION = (75, 220)
+HIGH_SCORE_TITLE_G_TEXT = HIGH_SCORE_TITLE_FONT_LEFT.render('G', True, WHITE)
+HIGH_SCORE_TITLE_H2_LOCATION = (75, 320)
+# right side
+HIGH_SCORE_TITLE_S_LOCATION = (635, 30)
+HIGH_SCORE_TITLE_S_TEXT = HIGH_SCORE_TITLE_FONT_RIGHT.render('S', True, WHITE)
+HIGH_SCORE_TITLE_C_LOCATION = (635, 110)
+HIGH_SCORE_TITLE_C_TEXT = HIGH_SCORE_TITLE_FONT_RIGHT.render('C', True, WHITE)
+HIGH_SCORE_TITLE_O_LOCATION = (635, 190)
+HIGH_SCORE_TITLE_O_TEXT = HIGH_SCORE_TITLE_FONT_RIGHT.render('O', True, WHITE)
+HIGH_SCORE_TITLE_R_LOCATION = (635, 270)
+HIGH_SCORE_TITLE_R_TEXT = HIGH_SCORE_TITLE_FONT_RIGHT.render('R', True, WHITE)
+HIGH_SCORE_TITLE_E_LOCATION = (635, 350)
+HIGH_SCORE_TITLE_E_TEXT = HIGH_SCORE_TITLE_FONT_RIGHT.render('E', True, WHITE)
 
 
 # screen object
@@ -157,9 +186,15 @@ def handle_homescreen(event):
             print('button was pressed at {0}'.format(mouse_pos))
             GAME_STATE = game_states.WAITING
 
+        if HOMESCREEN_HIGH_SCORES_BUTTON.collidepoint(*mouse_pos):
+            print('high score button pressed')
+            GAME_STATE = game_states.VICTORY_CLAIMED
+
     draw_events = [
         functools.partial(pygame.draw.rect, SCREEN, BUTTON_COLOR, HOMESCREEN_START_BUTTON),
-        functools.partial(SCREEN.blit, HOMESCREEN_START_TEXT, HOMESCREEN_START_TEXT_LOCATION)
+        functools.partial(SCREEN.blit, HOMESCREEN_START_TEXT, HOMESCREEN_START_TEXT_LOCATION),
+        functools.partial(pygame.draw.rect, SCREEN, BUTTON_COLOR, HOMESCREEN_HIGH_SCORES_BUTTON),
+        functools.partial(SCREEN.blit, HOMESCREEN_HIGH_SCORES_TEXT, HOMESCREEN_HIGH_SCORES_LOCATION)
     ]
     return draw_events
 
@@ -344,7 +379,31 @@ def handle_victory_claiming(cnxn, event):
 
 
 def handle_high_scores(cnxn, event):
-    draw_events = []
+    global GAME_STATE
+
+    if event and event.type == pygame.MOUSEBUTTONDOWN:
+        GAME_STATE = game_states.HOMESCREEN
+
+    draw_events = [
+        functools.partial(pygame.draw.rect, SCREEN, BUTTON_COLOR, HIGH_SCORE_BOX),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_H_TEXT, HIGH_SCORE_TITLE_H1_LOCATION),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_I_TEXT, HIGH_SCORE_TITLE_I_LOCATION),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_G_TEXT, HIGH_SCORE_TITLE_G_LOCATION),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_H_TEXT, HIGH_SCORE_TITLE_H2_LOCATION),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_S_TEXT, HIGH_SCORE_TITLE_S_LOCATION),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_C_TEXT, HIGH_SCORE_TITLE_C_LOCATION),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_O_TEXT, HIGH_SCORE_TITLE_O_LOCATION),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_R_TEXT, HIGH_SCORE_TITLE_R_LOCATION),
+        functools.partial(SCREEN.blit, HIGH_SCORE_TITLE_E_TEXT, HIGH_SCORE_TITLE_E_LOCATION)
+    ]
+
+    top_scores = sqlite_interface.get_high_scores(cnxn, 0)
+    i = 0
+    for row in top_scores:
+        text = HIGH_SCORE_ENTRIES_FONT.render('{place}. {name}    {score}'.format(place=i + 1, name=row[1], score=row[2]), True, FONT_COLOR)
+        draw_events.append(functools.partial(SCREEN.blit, text, (FIRST_PLACE_TEXT_LOCATION[0], FIRST_PLACE_TEXT_LOCATION[1] + 70 * i)))
+        i += 1
+
     return draw_events
 
 
